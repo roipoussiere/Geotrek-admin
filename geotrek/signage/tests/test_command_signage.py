@@ -11,7 +11,47 @@ from geotrek.core.tests.factories import PathFactory
 from geotrek.signage.tests.factories import SignageFactory
 from geotrek.signage.models import Signage
 from geotrek.authent.tests.factories import StructureFactory
-from geotrek.common.tests.utils import update_gis
+from geotrek.common.tests.utils import GISBuilder
+
+
+shp_builder = GISBuilder(
+    driver='ESRI Shapefile',
+    epsg=4326,
+    schema={
+        'geometry': 'Point',
+        'properties': {
+            'id': 'int:10',
+            'name': 'str:80',
+            'label': 'str:80',
+            'condition': 'str:80',
+            'structure': 'str:80',
+            'descriptio': 'str:80',
+            'year': 'str:80',
+            'eid': 'str:80',
+            'sealing': 'str:10',
+            'manager': 'str:10'
+        }
+    },
+    default_record={
+        'geometry': {
+            'coordinates': (0, 0),
+            'type': 'Point',
+            'geometries': None
+        },
+        'properties': {
+            'id': 0,
+            'name': 'name',
+            'label': 'type',
+            'condition': 'condition',
+            'structure': 'structure',
+            'descriptio': 'description',
+            'year': '2000',
+            'eid': 'eid1',
+            'sealing': 'sealing',
+            'manager': 'manager'
+        }
+    }
+)
 
 
 class SignageCommandTest(TestCase):
@@ -56,11 +96,11 @@ class SignageCommandTest(TestCase):
     def test_load_signage_none_year(self):
         '''Loading a signage with a year set to None should not fail.'''
 
-        input_file_path = os.path.join(os.path.dirname(__file__), 'data', 'signage.shp')
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_file_path = os.path.join(tmp_dir, 'signage_none_year.shp')
-            update_gis(input_file_path, output_file_path, {'year': None})
+            shp_builder.write(output_file_path, [
+                {'properties': {'year': None}}
+            ])
 
             output = StringIO()
             StructureFactory.create(name='structure')
@@ -82,11 +122,11 @@ class SignageCommandTest(TestCase):
     def test_load_signage_bad_year(self):
         '''Loading a signage with an invalid year should fail.'''
 
-        input_file_path = os.path.join(os.path.dirname(__file__), 'data', 'signage.shp')
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_file_path = os.path.join(tmp_dir, 'signage_none_year.shp')
-            update_gis(input_file_path, output_file_path, {'year': 'not a number'})
+            shp_builder.write(output_file_path, [
+                {'properties': {'year': 'not a number'}}
+            ])
 
             output = StringIO()
             StructureFactory.create(name='structure')
